@@ -1,7 +1,7 @@
 {
   "name": "beggar-hub",
   "version": "1.0.0",
-  "description": "天下英雄，尽入吾彀中。管理多个公益站 Token 与模型测试的丐帮神器。",
+  "description": "天下英雄，尽入吾彀中。管理多个分舵 Token 与模型测试的丐帮神器。",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,14 +12,15 @@
     "api",
     "token",
     "llm",
-    "公益",
     "丐帮"
   ],
   "author": "marszhong",
   "license": "MIT",
   "dependencies": {
+    "i18next": "^26.3.6",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.11",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

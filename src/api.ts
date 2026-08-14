@@ -2,6 +2,9 @@
 // 参考 yunwu 的 Provider 实现：类型决定 API 格式，baseUrl 自动归一化
 
 import type { ProbeResult, TokenType } from './types'
+import i18n from './i18n'
+
+const t = i18n.t.bind(i18n)
 
 /** 归一化 baseUrl：去尾部斜杠，OpenAI 兼容自动补 /v1 */
 function normalizeBaseUrl(baseUrl: string): string {
@@ -68,20 +71,20 @@ async function testOne(
     const res = await fetch(url, init)
     const latencyMs = Date.now() - start
     if (res.ok) {
-      return { ok: true, latencyMs, message: '接口可用' }
+      return { ok: true, latencyMs, message: t('api.ok') }
     }
     if (res.status === 401 || res.status === 403) {
-      return { ok: false, latencyMs, message: `API 密钥无效或无访问权限（HTTP ${res.status}）` }
+      return { ok: false, latencyMs, message: t('api.keyInvalid', { status: res.status }) }
     }
     if (res.status === 404) {
-      return { ok: false, latencyMs, message: '未找到对应的对话接口（HTTP 404）' }
+      return { ok: false, latencyMs, message: t('api.notFound') }
     }
-    return { ok: false, latencyMs, message: `请求失败（HTTP ${res.status}）` }
+    return { ok: false, latencyMs, message: t('api.requestFailed', { status: res.status }) }
   } catch (e) {
     return {
       ok: false,
       latencyMs: Date.now() - start,
-      message: '网络请求失败，请检查接口地址、网络连接或 CORS 配置',
+      message: t('api.networkError'),
     }
   }
 }
@@ -99,14 +102,14 @@ export async function probe(
   const okCount = results.filter((r) => r.ok).length
   const maxLatency = Math.max(...results.map((r) => r.latencyMs))
 
-  const label = (i: number) => (models.length > 0 ? `模型 ${list[i]}` : '默认模型')
+  const label = (i: number) => (models.length > 0 ? t('api.modelLabel', { name: list[i] }) : t('api.defaultModel'))
 
   let message: string
   if (okAll) {
     message =
       models.length > 0
-        ? `API 密钥有效，${results.length} 个模型均可访问`
-        : 'API 密钥有效，接口可正常访问'
+        ? t('api.keyValidAll', { count: results.length })
+        : t('api.keyValidDefault')
   } else {
     const fail = results
       .map((result, index) => ({ result, index }))
@@ -115,8 +118,8 @@ export async function probe(
       .join('；')
     message =
       models.length > 0
-        ? `${okCount}/${results.length} 个模型可访问：${fail}`
-        : `默认模型不可访问：${fail}`
+        ? t('api.partial', { ok: okCount, total: results.length, fail })
+        : t('api.defaultFail', { fail })
   }
 
   return { ok: okAll, latencyMs: Math.round(maxLatency), message, probedAt: Date.now() }

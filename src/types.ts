@@ -11,9 +11,9 @@ export interface ProbeResult {
 /** 令牌类型（决定探子用哪个对话接口测试） */
 export type TokenType = 'openai' | 'openai-response'
 
-export const TOKEN_TYPES: { value: TokenType; label: string }[] = [
-  { value: 'openai', label: 'OpenAI 兼容' },
-  { value: 'openai-response', label: 'OpenAI Responses API' },
+export const TOKEN_TYPES: { value: TokenType; labelKey: string }[] = [
+  { value: 'openai', labelKey: 'tokenTypes.openai' },
+  { value: 'openai-response', labelKey: 'tokenTypes.openaiResponse' },
 ]
 
 /** 令牌 —— 分舵（Provider）里的一个 API Key */
@@ -30,7 +30,7 @@ export interface Token {
   createdAt: number
 }
 
-/** Provider（分舵/公益站） */
+/** Provider（分舵） */
 export interface Provider {
   id: string
   name: string

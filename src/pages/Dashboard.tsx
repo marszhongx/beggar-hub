@@ -1,6 +1,8 @@
 import { useStore } from '../store'
+import { useTranslation } from 'react-i18next'
 
 export default function Dashboard({ onNav }: { onNav: (t: 'providers' | 'probe') => void }) {
+  const { t } = useTranslation()
   const providers = useStore((s) => s.providers)
   const tokenCount = providers.reduce((sum, p) => sum + p.tokens.length, 0)
 
@@ -10,21 +12,21 @@ export default function Dashboard({ onNav }: { onNav: (t: 'providers' | 'probe')
   const cards = [
     {
       icon: '🏯',
-      label: '分舵（公益站）',
+      label: t('dashboard.providersLabel'),
       value: providers.length,
       sub:
         providers.length === 0
-          ? '尚未登记公益站'
+          ? t('dashboard.providersEmpty')
           : probedProviders === 0
-            ? '尚未进行连通性检测'
-            : `${okProviders}/${probedProviders} 个已检测站点可用`,
+            ? t('dashboard.providersUnprobed')
+            : t('dashboard.providersProbed', { ok: okProviders, total: probedProviders }),
       go: 'providers' as const,
     },
     {
       icon: '🪙',
-      label: '令牌（API Key）',
+      label: t('dashboard.tokensLabel'),
       value: tokenCount,
-      sub: tokenCount > 0 ? '用于访问模型接口' : '尚未添加访问凭证',
+      sub: tokenCount > 0 ? t('dashboard.tokensSub') : t('dashboard.tokensEmpty'),
       go: 'providers' as const,
     },
   ]
