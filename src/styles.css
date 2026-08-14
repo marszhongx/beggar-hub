@@ -72,7 +72,8 @@ body {
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  padding: var(--space-3) var(--space-4);
+  height: 40px;
+  padding: 0 var(--space-4);
   margin-bottom: var(--space-1);
   background: none;
   border: none;
@@ -145,7 +146,7 @@ body {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: var(--space-5);
-  height: auto;
+  height: 150px;
   text-align: left;
   cursor: pointer;
   transition: transform 0.1s, box-shadow 0.15s;
@@ -318,9 +319,9 @@ button.danger:hover:not(:disabled) { background: #fdf0ee; }
 .provider-new-card {
   display: block;
   width: 100%;
-  height: auto;
+  height: 48px;
   margin: var(--space-4) 0;
-  padding: var(--space-5);
+  padding: 0 var(--space-5);
   border: 1px dashed var(--line);
   border-radius: var(--radius);
   background: var(--panel);
