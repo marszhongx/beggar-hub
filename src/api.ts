@@ -94,20 +94,24 @@ export async function probe(
   baseUrl: string,
   apiKey: string,
   type: TokenType,
-  models: string[]
+  models: string
 ): Promise<ProbeResult> {
-  const list = models.length > 0 ? models : ['']
-  const results = await Promise.all(list.map((m) => testOne(baseUrl, apiKey, type, m)))
+  const list = models
+    .split(/[,，\s]+/)
+    .map((m) => m.trim())
+    .filter(Boolean)
+  const list2 = list.length > 0 ? list : ['']
+  const results = await Promise.all(list2.map((m) => testOne(baseUrl, apiKey, type, m)))
   const okAll = results.every((r) => r.ok)
   const okCount = results.filter((r) => r.ok).length
   const maxLatency = Math.max(...results.map((r) => r.latencyMs))
 
-  const label = (i: number) => (models.length > 0 ? t('api.modelLabel', { name: list[i] }) : t('api.defaultModel'))
+  const label = (i: number) => (list.length > 0 ? t('api.modelLabel', { name: list2[i] }) : t('api.defaultModel'))
 
   let message: string
   if (okAll) {
     message =
-      models.length > 0
+      list.length > 0
         ? t('api.keyValidAll', { count: results.length })
         : t('api.keyValidDefault')
   } else {
@@ -117,7 +121,7 @@ export async function probe(
       .map(({ result, index }) => `${label(index)}：${result.message}`)
       .join('；')
     message =
-      models.length > 0
+      list.length > 0
         ? t('api.partial', { ok: okCount, total: results.length, fail })
         : t('api.defaultFail', { fail })
   }

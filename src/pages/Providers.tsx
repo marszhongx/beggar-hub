@@ -36,7 +36,7 @@ export default function Providers() {
   const [revealed, setRevealed] = useState<Record<string, boolean>>({})
   // 令牌模型列的编辑值（按令牌 id）
   const [modelInputs, setModelInputs] = useState<Record<string, string>>({})
-  const modelVal = (t: Token) => modelInputs[t.id] ?? t.models.join(', ')
+  const modelVal = (t: Token) => modelInputs[t.id] ?? t.models
   // 令牌密钥列的编辑值（按令牌 id）
   const [keyInputs, setKeyInputs] = useState<Record<string, string>>({})
   const keyVal = (t: Token) => keyInputs[t.id] ?? t.key
@@ -82,25 +82,18 @@ export default function Providers() {
 
   const confirmAdd = (providerId: string) => {
     if (!draft.name.trim() || !draft.key.trim()) return
-    const models = draft.model
-      .split(/[,，\s]+/)
-      .map((m) => m.trim())
-      .filter(Boolean)
     addToken(providerId, {
       name: draft.name.trim(),
       key: draft.key.trim(),
       type: draft.type,
-      models,
+      models: draft.model.trim(),
     })
     setAdding((a) => ({ ...a, [providerId]: false }))
   }
 
   const saveToken = (p: Provider, t: Token) => {
     const patch: Partial<Token> = {}
-    const models = (modelInputs[t.id] ?? '')
-      .split(/[,，\s]+/)
-      .map((m) => m.trim())
-      .filter(Boolean)
+    const models = (modelInputs[t.id] ?? '').trim()
     patch.models = models
     const key = keyInputs[t.id]
     if (key !== undefined && key.trim()) patch.key = key.trim()
