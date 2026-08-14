@@ -37,6 +37,12 @@ export default function Providers() {
   // 令牌模型列的编辑值（按令牌 id）
   const [modelInputs, setModelInputs] = useState<Record<string, string>>({})
   const modelVal = (t: Token) => modelInputs[t.id] ?? t.models
+  // 令牌名称列的编辑值（按令牌 id）
+  const [nameInputs, setNameInputs] = useState<Record<string, string>>({})
+  const nameVal = (t: Token) => nameInputs[t.id] ?? t.name
+  // 令牌类型列的编辑值（按令牌 id）
+  const [typeInputs, setTypeInputs] = useState<Record<string, TokenType>>({})
+  const typeVal = (t: Token) => typeInputs[t.id] ?? t.type
   // 令牌密钥列的编辑值（按令牌 id）
   const [keyInputs, setKeyInputs] = useState<Record<string, string>>({})
   const keyVal = (t: Token) => keyInputs[t.id] ?? t.key
@@ -93,6 +99,10 @@ export default function Providers() {
 
   const saveToken = (p: Provider, t: Token) => {
     const patch: Partial<Token> = {}
+    const name = nameInputs[t.id]
+    if (name !== undefined && name.trim()) patch.name = name.trim()
+    const type = typeInputs[t.id]
+    if (type !== undefined) patch.type = type
     const models = (modelInputs[t.id] ?? '').trim()
     patch.models = models
     const key = keyInputs[t.id]
@@ -195,9 +205,33 @@ export default function Providers() {
                       {
                         key: 'type',
                         title: t('providers.colType'),
-                        render: (tok) => TOKEN_TYPES.find((x) => x.value === tok.type)?.labelKey ? t(TOKEN_TYPES.find((x) => x.value === tok.type)!.labelKey) : tok.type,
+                        render: (tok) => (
+                          <select
+                            className="cell-input"
+                            value={typeVal(tok)}
+                            onChange={(e) =>
+                              setTypeInputs((m) => ({ ...m, [tok.id]: e.target.value as TokenType }))
+                            }
+                          >
+                            {TOKEN_TYPES.map((x) => (
+                              <option key={x.value} value={x.value}>{t(x.labelKey)}</option>
+                            ))}
+                          </select>
+                        ),
                       },
-                      { key: 'name', title: t('providers.colTokenName') },
+                      {
+                        key: 'name',
+                        title: t('providers.colTokenName'),
+                        render: (tok) => (
+                          <input
+                            className="cell-input"
+                            value={nameVal(tok)}
+                            onChange={(e) =>
+                              setNameInputs((m) => ({ ...m, [tok.id]: e.target.value }))
+                            }
+                          />
+                        ),
+                      },
                       {
                         key: 'models',
                         title: t('providers.colModel'),
