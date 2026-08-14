@@ -10,6 +10,8 @@ export default function Probe() {
   const providers = useStore((s) => s.providers)
   const updateProvider = useStore((s) => s.updateProvider)
   const [probing, setProbing] = useState<string | null>(null)
+  // 探测进度：{ done, total }
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
 
   const runProbe = async (p: Provider) => {
     if (p.tokens.length === 0) {
@@ -24,9 +26,14 @@ export default function Probe() {
       return
     }
     setProbing(p.id)
+    setProgress({ done: 0, total: 0 })
     // 探该分舵下所有令牌，每个令牌探其全部模型
     const results = await Promise.all(
-      p.tokens.map((token) => probe(p.baseUrl, token.key, token.type, token.models))
+      p.tokens.map((token) =>
+        probe(p.baseUrl, token.key, token.type, token.models, (done, total) => {
+          setProgress({ done, total })
+        })
+      )
     )
     const okAll = results.every((r) => r.ok)
     const okCount = results.filter((r) => r.ok).length
@@ -50,6 +57,7 @@ export default function Probe() {
       },
     })
     setProbing(null)
+    setProgress(null)
   }
 
   const probeAll = async () => {
@@ -77,18 +85,41 @@ export default function Probe() {
                 key: 'status',
                 title: t('probe.colStatus'),
                 render: (p) =>
-                  probing === p.id
-                    ? t('probe.probing')
-                    : p.lastProbe
-                      ? (p.lastProbe.ok ? t('probe.statusOk') : t('probe.statusFail'))
-                      : t('probe.statusNone'),
+                  probing === p.id ? (
+                    <span className="probe-progress">
+                      <span className="probe-spinner" />
+                      {progress && progress.total > 0
+                        ? `${progress.done}/${progress.total}`
+                        : t('probe.probing')}
+                    </span>
+                  ) : p.lastProbe ? (
+                    <span className={p.lastProbe.ok ? 'status-ok' : 'status-fail'}>
+                      {p.lastProbe.ok ? '🟢' : '🔴'} {p.lastProbe.ok ? t('probe.statusOk') : t('probe.statusFail')}
+                    </span>
+                  ) : (
+                    <span className="status-none">⚪ {t('probe.statusNone')}</span>
+                  ),
               },
               {
                 key: 'latency',
                 title: t('probe.colLatency'),
                 render: (p) => (p.lastProbe && p.lastProbe.latencyMs ? `${p.lastProbe.latencyMs}ms` : '—'),
               },
-              { key: 'message', title: t('probe.colMessage'), render: (p) => p.lastProbe?.message ?? '—' },
+              {
+                key: 'message',
+                title: t('probe.colMessage'),
+                render: (p) =>
+                  probing === p.id && progress && progress.total > 0 ? (
+                    <div className="probe-bar">
+                      <div
+                        className="probe-bar-fill"
+                        style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }}
+                      />
+                    </div>
+                  ) : (
+                    p.lastProbe?.message ?? '—'
+                  ),
+              },
             ]}
             actions={(p) => (
               <button onClick={() => runProbe(p)} disabled={probing !== null}>

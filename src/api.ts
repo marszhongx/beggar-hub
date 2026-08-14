@@ -94,14 +94,25 @@ export async function probe(
   baseUrl: string,
   apiKey: string,
   type: TokenType,
-  models: string
+  models: string,
+  onProgress?: (done: number, total: number) => void
 ): Promise<ProbeResult> {
   const list = models
     .split(/[,，\s]+/)
     .map((m) => m.trim())
     .filter(Boolean)
   const list2 = list.length > 0 ? list : ['']
-  const results = await Promise.all(list2.map((m) => testOne(baseUrl, apiKey, type, m)))
+  const total = list2.length
+  // 并发探测，每完成一个即上报进度
+  let done = 0
+  const results = await Promise.all(
+    list2.map(async (m) => {
+      const r = await testOne(baseUrl, apiKey, type, m)
+      done++
+      onProgress?.(done, total)
+      return r
+    })
+  )
   const okAll = results.every((r) => r.ok)
   const okCount = results.filter((r) => r.ok).length
   const maxLatency = Math.max(...results.map((r) => r.latencyMs))
