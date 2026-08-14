@@ -8,14 +8,14 @@ import Transfer from './pages/Transfer'
 type Tab = 'dashboard' | 'providers' | 'probe' | 'transfer'
 
 const NAV: { key: Tab; icon: string; label: string; desc: string }[] = [
-  { key: 'dashboard', icon: '⚔️', label: '聚义厅', desc: '总览' },
-  { key: 'providers', icon: '🏯', label: '分舵', desc: '公益站与令牌' },
-  { key: 'probe', icon: '🕵️', label: '探子来报', desc: '站点监控' },
-  { key: 'transfer', icon: '🧘', label: '传功', desc: '导入导出' },
+  { key: 'dashboard', icon: '⚔️', label: '聚义厅', desc: '数据总览' },
+  { key: 'providers', icon: '🏯', label: '分舵', desc: '站点与令牌' },
+  { key: 'probe', icon: '🕵️', label: '探子来报', desc: '连通性检测' },
+  { key: 'transfer', icon: '🧘', label: '传功', desc: '配置迁移' },
 ]
 
 const SLOGAN = '天下英雄，尽入吾彀中。'
-const SLOGAN2 = '打狗棒在手，Token全都有。'
+const SLOGAN2 = '打狗棒在手，Token 全都有。'
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('dashboard')
@@ -51,7 +51,7 @@ export default function App() {
           <div>分舵 <b>{providers.length}</b></div>
           <div>令牌 <b>{tokenCount}</b></div>
         </div>
-        <div className="disclaimer-mini">仅技术研究，密钥自备，风险自担</div>
+        <div className="disclaimer-mini">密钥仅存本机，请妥善保管并合规使用</div>
       </aside>
 
       <main className="content">

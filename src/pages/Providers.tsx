@@ -109,35 +109,35 @@ export default function Providers() {
     <div className="stations">
       {addingProvider ? (
         <div className="panel">
-          <h3>🏯 开新分舵</h3>
+          <h3>🏯 登记公益站</h3>
           <div className="provider-new">
             <input
-              placeholder="分舵名"
+              placeholder="公益站名称（必填）"
               value={newProvider.name}
               onChange={(e) => setNewProvider((n) => ({ ...n, name: e.target.value }))}
             />
             <input
-              placeholder="官网地址"
+              placeholder="官网地址（可选）"
               value={newProvider.website}
               onChange={(e) => setNewProvider((n) => ({ ...n, website: e.target.value }))}
             />
             <input
-              placeholder="API Base URL"
+              placeholder="API 基础地址（必填）"
               value={newProvider.baseUrl}
               onChange={(e) => setNewProvider((n) => ({ ...n, baseUrl: e.target.value }))}
             />
-            <button onClick={confirmAddProvider}>保存</button>
+            <button onClick={confirmAddProvider}>确认登记</button>
             <button className="danger" onClick={cancelAddProvider}>取消</button>
           </div>
         </div>
       ) : (
         <button className="provider-new-card" onClick={beginAddProvider}>
-          ＋ 开新分舵
+          ＋ 登记公益站
         </button>
       )}
 
       {providers.length === 0 ? (
-        <p className="empty">还没有分舵，先登记一个公益站吧</p>
+        <p className="empty">尚未登记公益站。点击上方按钮开始添加。</p>
       ) : (
         providers.map((s) => {
           const stTokens = s.tokens
@@ -155,14 +155,14 @@ export default function Providers() {
                     />
                     <input
                       value={providerVal(s).website}
-                      placeholder="官网（可选）"
+                      placeholder="官网地址（可选）"
                       onChange={(e) =>
                         setProviderInputs((m) => ({ ...m, [s.id]: { ...providerVal(s), website: e.target.value } }))
                       }
                     />
                     <input
                       value={providerVal(s).baseUrl}
-                      placeholder="API Base URL"
+                      placeholder="API 基础地址"
                       onChange={(e) =>
                         setProviderInputs((m) => ({ ...m, [s.id]: { ...providerVal(s), baseUrl: e.target.value } }))
                       }
@@ -171,14 +171,14 @@ export default function Providers() {
                 </div>
                 <div className="provider-actions">
                   <button onClick={() => beginAdd(s.id)}>添加令牌</button>
-                  <button onClick={() => saveProvider(s)}>保存</button>
-                  <button className="danger" onClick={() => removeProvider(s.id)}>解散</button>
+                  <button onClick={() => saveProvider(s)}>保存修改</button>
+                  <button className="danger" onClick={() => removeProvider(s.id)}>删除分舵</button>
                 </div>
               </div>
 
               <div className="provider-tokens">
                 {stTokens.length === 0 && !adding[s.id] ? (
-                  <p className="empty">本分舵还没令牌</p>
+                  <p className="empty">尚未添加令牌。添加后即可检测接口连通性。</p>
                 ) : (
                   <Table<Token>
                     rows={stTokens}
@@ -189,7 +189,7 @@ export default function Providers() {
                         title: '类型',
                         render: (t) => TOKEN_TYPES.find((x) => x.value === t.type)?.label ?? t.type,
                       },
-                      { key: 'name', title: '令牌名' },
+                      { key: 'name', title: '令牌名称' },
                       {
                         key: 'models',
                         title: '模型',
@@ -197,7 +197,7 @@ export default function Providers() {
                           <input
                             className="cell-input"
                             value={modelVal(t)}
-                            placeholder="模型名（逗号隔开）"
+                            placeholder="模型名称，多个请用逗号分隔"
                             onChange={(e) =>
                               setModelInputs((m) => ({ ...m, [t.id]: e.target.value }))
                             }
@@ -206,7 +206,7 @@ export default function Providers() {
                       },
                       {
                         key: 'key',
-                        title: '密钥',
+                        title: 'API 密钥',
                         render: (t) => (
                           <span className="key-input">
                             <input
@@ -232,8 +232,8 @@ export default function Providers() {
                     ]}
                     actions={(t) => (
                       <div className="table-actions">
-                        <button onClick={() => saveToken(s, t)}>保存</button>
-                        <button className="danger" onClick={() => removeToken(s.id, t.id)}>丢弃</button>
+                        <button onClick={() => saveToken(s, t)}>保存修改</button>
+                        <button className="danger" onClick={() => removeToken(s.id, t.id)}>删除</button>
                       </div>
                     )}
                     footerRow={() =>
@@ -254,7 +254,7 @@ export default function Providers() {
                           <td>
                             <input
                               className="cell-input"
-                              placeholder="令牌名"
+                              placeholder="令牌名称（必填）"
                               value={draft.name}
                               onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
                             />
@@ -262,7 +262,7 @@ export default function Providers() {
                           <td>
                             <input
                               className="cell-input"
-                              placeholder="模型名（逗号隔开）"
+                              placeholder="模型名称，多个请用逗号分隔"
                               value={draft.model}
                               onChange={(e) => setDraft((d) => ({ ...d, model: e.target.value }))}
                             />
@@ -272,7 +272,7 @@ export default function Providers() {
                               <input
                                 className="cell-input"
                                 type={revealDraft ? 'text' : 'password'}
-                                placeholder="API Key"
+                                placeholder="API 密钥（必填）"
                                 value={draft.key}
                                 onChange={(e) => setDraft((d) => ({ ...d, key: e.target.value }))}
                               />
@@ -288,7 +288,7 @@ export default function Providers() {
                           </td>
                           <td>
                             <div className="table-actions">
-                              <button onClick={() => confirmAdd(s.id)}>保存</button>
+                              <button onClick={() => confirmAdd(s.id)}>确认添加</button>
                               <button className="danger" onClick={() => cancelAdd(s.id)}>取消</button>
                             </div>
                           </td>

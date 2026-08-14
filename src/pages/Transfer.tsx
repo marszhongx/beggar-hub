@@ -11,7 +11,7 @@ export default function Transfer() {
   const exportJson = () => {
     const data = JSON.stringify(state, null, 2)
     setJson(data)
-    setMsg('已导出，复制下方内容保存')
+    setMsg('导出文本已生成，请复制并妥善保存。')
   }
 
   const download = () => {
@@ -22,39 +22,39 @@ export default function Transfer() {
     a.download = `beggar-hub-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
-    setMsg('已下载配置文件')
+    setMsg('配置文件已下载。')
   }
 
   const importJson = () => {
     try {
       const data = JSON.parse(json)
       importAll(data)
-      setMsg('传功成功！配置已导入')
-    } catch (e) {
-      setMsg('传功失败：' + (e instanceof Error ? e.message : String(e)))
+      setMsg('配置导入成功。')
+    } catch {
+      setMsg('配置导入失败：JSON 格式不正确，请检查后重试。')
     }
   }
 
   return (
     <div className="transfer">
       <div className="panel">
-        <h3>🧘 传功（配置导入导出）</h3>
+        <h3>🧘 配置迁移</h3>
         <p className="hint">
-          导出当前全部分舵与令牌配置为 JSON，可在其他设备导入。密钥会一并导出，请妥善保管。
+          可将全部分舵和令牌导出为 JSON，并在其他设备导入。导出内容包含 API 密钥，请勿公开或转发。
         </p>
         <div className="form-row">
-          <button className="primary" onClick={exportJson}>导出到文本框</button>
-          <button className="primary" onClick={download}>下载 JSON 文件</button>
+          <button className="primary" onClick={exportJson}>生成导出文本</button>
+          <button className="primary" onClick={download}>下载配置文件</button>
         </div>
         <textarea
           rows={10}
           className="mono"
-          placeholder="导出的配置会显示在这里，或粘贴要导入的配置"
+          placeholder="导出内容将显示在这里；也可粘贴待导入的 JSON 配置"
           value={json}
           onChange={(e) => setJson(e.target.value)}
         />
         <div className="form-row">
-          <button onClick={importJson}>导入（传功）</button>
+          <button onClick={importJson}>导入配置</button>
         </div>
         {msg && <p className="msg">{msg}</p>}
       </div>

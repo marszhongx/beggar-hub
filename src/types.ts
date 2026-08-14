@@ -13,7 +13,7 @@ export type TokenType = 'openai' | 'openai-response'
 
 export const TOKEN_TYPES: { value: TokenType; label: string }[] = [
   { value: 'openai', label: 'OpenAI 兼容' },
-  { value: 'openai-response', label: 'OpenAI Response' },
+  { value: 'openai-response', label: 'OpenAI Responses API' },
 ]
 
 /** 令牌 —— 分舵（Provider）里的一个 API Key */

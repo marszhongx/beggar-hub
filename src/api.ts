@@ -68,20 +68,20 @@ async function testOne(
     const res = await fetch(url, init)
     const latencyMs = Date.now() - start
     if (res.ok) {
-      return { ok: true, latencyMs, message: '正常' }
+      return { ok: true, latencyMs, message: '接口可用' }
     }
     if (res.status === 401 || res.status === 403) {
-      return { ok: false, latencyMs, message: `令牌无效（HTTP ${res.status}）` }
+      return { ok: false, latencyMs, message: `API 密钥无效或无访问权限（HTTP ${res.status}）` }
     }
     if (res.status === 404) {
-      return { ok: false, latencyMs, message: '未找到对话接口（HTTP 404）' }
+      return { ok: false, latencyMs, message: '未找到对应的对话接口（HTTP 404）' }
     }
-    return { ok: false, latencyMs, message: `HTTP ${res.status}` }
+    return { ok: false, latencyMs, message: `请求失败（HTTP ${res.status}）` }
   } catch (e) {
     return {
       ok: false,
       latencyMs: Date.now() - start,
-      message: e instanceof Error ? e.message : String(e),
+      message: '网络请求失败，请检查接口地址、网络连接或 CORS 配置',
     }
   }
 }
@@ -105,17 +105,18 @@ export async function probe(
   if (okAll) {
     message =
       models.length > 0
-        ? `令牌有效，${results.length} 个模型全部可对话`
-        : '令牌有效，可正常对话'
+        ? `API 密钥有效，${results.length} 个模型均可访问`
+        : 'API 密钥有效，接口可正常访问'
   } else {
     const fail = results
-      .filter((r) => !r.ok)
-      .map((r, i) => `${label(i)}: ${r.message}`)
+      .map((result, index) => ({ result, index }))
+      .filter(({ result }) => !result.ok)
+      .map(({ result, index }) => `${label(index)}：${result.message}`)
       .join('；')
     message =
       models.length > 0
-        ? `令牌有效但 ${okCount}/${results.length} 个模型可对话：${fail}`
-        : `默认模型不可对话：${fail}`
+        ? `${okCount}/${results.length} 个模型可访问：${fail}`
+        : `默认模型不可访问：${fail}`
   }
 
   return { ok: okAll, latencyMs: Math.round(maxLatency), message, probedAt: Date.now() }

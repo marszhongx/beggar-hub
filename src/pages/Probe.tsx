@@ -19,7 +19,7 @@ export default function Probe() {
         lastProbe: {
           ok: false,
           latencyMs: 0,
-          message: '该分舵没有令牌，无法测试',
+          message: '该分舵尚未添加令牌，无法检测',
           probedAt: Date.now(),
         },
       })
@@ -39,13 +39,13 @@ export default function Probe() {
     <div className="probe">
       <div className="panel">
         <div className="panel-head">
-          <h3>🕵️ 探子来报</h3>
+          <h3>🕵️ 接口连通性检测</h3>
           <button className="primary" onClick={probeAll} disabled={probing !== null || providers.length === 0}>
-            {probing !== null ? '巡视中…' : '全舵巡视'}
+            {probing !== null ? '检测中…' : '检测全部分舵'}
           </button>
         </div>
         {providers.length === 0 ? (
-          <p className="empty">还没有分舵，去「分舵」登记公益站吧</p>
+          <p className="empty">尚未登记公益站。请先前往「分舵」添加站点和令牌。</p>
         ) : (
           <Table<Provider>
             rows={providers}
@@ -57,27 +57,27 @@ export default function Probe() {
                 title: '状态',
                 render: (p) =>
                   probing === p.id
-                    ? '探访中…'
+                    ? '检测中…'
                     : p.lastProbe
-                      ? (p.lastProbe.ok ? '🟢 平安' : '🔴 异常')
-                      : '⚪ 未探访',
+                      ? (p.lastProbe.ok ? '🟢 可用' : '🔴 不可用')
+                      : '⚪ 未检测',
               },
               {
                 key: 'latency',
                 title: '延迟',
                 render: (p) => (p.lastProbe && p.lastProbe.latencyMs ? `${p.lastProbe.latencyMs}ms` : '—'),
               },
-              { key: 'message', title: '探报', render: (p) => p.lastProbe?.message ?? '—' },
+              { key: 'message', title: '检测详情', render: (p) => p.lastProbe?.message ?? '—' },
             ]}
             actions={(p) => (
               <button onClick={() => runProbe(p)} disabled={probing !== null}>
-                探一下
+                立即检测
               </button>
             )}
           />
         )}
         <p className="hint">
-          探子用该分舵的令牌（API Key）按令牌类型实测对话接口，对该令牌登记的所有模型逐个发最小对话测试，纯浏览器直连，需站点开启 CORS。
+          每个分舵使用首个令牌检测已登记的全部模型。请求由浏览器直接发送，目标站点必须允许跨域访问（CORS）。
         </p>
       </div>
     </div>
