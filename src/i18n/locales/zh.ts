@@ -1,7 +1,6 @@
 export default {
   app: {
     brand: '丐帮',
-    slogan: '天下英雄，尽入吾彀中。',
     slogan2: '打狗棒在手，Token 全都有。',
     nav: {
       dashboard: '聚义厅',

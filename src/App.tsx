@@ -65,7 +65,6 @@ export default function App() {
       <main className="content">
         <header className="topbar">
           <h1>{t(`app.nav.${tab}`)}</h1>
-          <div className="slogan">{t('app.slogan')}</div>
         </header>
         {tab === 'dashboard' && <Dashboard onNav={setTab} />}
         {tab === 'providers' && <Providers />}

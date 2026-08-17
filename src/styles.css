@@ -125,7 +125,6 @@ body {
   border-bottom: 1px solid var(--line);
 }
 .topbar h1 { margin: 0; font-size: 22px; }
-.slogan { color: var(--muted); font-size: 13px; font-style: italic; }
 
 /* 页面滚动容器 */
 .dashboard, .tokens, .stations, .arena, .probe, .ledger, .transfer {

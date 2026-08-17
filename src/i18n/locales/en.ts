@@ -1,7 +1,6 @@
 export default {
   app: {
     brand: 'Beggar Hub',
-    slogan: 'All heroes under heaven, into my net.',
     slogan2: 'With the Dog-Beating Stick, all Tokens are yours.',
     nav: {
       dashboard: 'Hall',
