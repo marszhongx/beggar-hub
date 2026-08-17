@@ -1,9 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Provider, Token } from './types'
+import type { ProbeResult, Provider, Token } from './types'
 
 interface AppState {
   providers: Provider[]
+  /** 各令牌最近一次探报（tokenId → 结果） */
+  tokenProbes: Record<string, ProbeResult>
+  /** 各分舵最近探报历史（providerId → 结果列表） */
+  probeHistory: Record<string, ProbeResult[]>
 
   addProvider: (p: Omit<Provider, 'id' | 'createdAt' | 'tokens'>) => void
   updateProvider: (id: string, patch: Partial<Provider>) => void
@@ -12,6 +16,9 @@ interface AppState {
   addToken: (providerId: string, t: Omit<Token, 'id' | 'createdAt'>) => void
   updateToken: (providerId: string, tokenId: string, patch: Partial<Token>) => void
   removeToken: (providerId: string, tokenId: string) => void
+
+  setTokenProbe: (tokenId: string, result: ProbeResult) => void
+  pushProbeHistory: (providerId: string, result: ProbeResult) => void
 
   importAll: (data: Partial<AppState>) => void
 }
@@ -22,6 +29,8 @@ export const useStore = create<AppState>()(
   persist(
     (set) => ({
       providers: [],
+      tokenProbes: {},
+      probeHistory: {},
 
       addProvider: (p) =>
         set((st) => ({
@@ -67,9 +76,22 @@ export const useStore = create<AppState>()(
           ),
         })),
 
+      setTokenProbe: (tokenId, result) =>
+        set((st) => ({ tokenProbes: { ...st.tokenProbes, [tokenId]: result } })),
+
+      pushProbeHistory: (providerId, result) =>
+        set((st) => ({
+          probeHistory: {
+            ...st.probeHistory,
+            [providerId]: [...(st.probeHistory[providerId] ?? []), result].slice(-10),
+          },
+        })),
+
       importAll: (data) =>
         set((st) => ({
           providers: data.providers ?? st.providers,
+          tokenProbes: data.tokenProbes ?? st.tokenProbes,
+          probeHistory: data.probeHistory ?? st.probeHistory,
         })),
     }),
     { name: 'beggar-hub-store' }

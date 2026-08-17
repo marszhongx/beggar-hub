@@ -4,10 +4,14 @@ import { useTranslation } from 'react-i18next'
 export default function Dashboard({ onNav }: { onNav: (t: 'providers' | 'probe') => void }) {
   const { t } = useTranslation()
   const providers = useStore((s) => s.providers)
+  const probeHistory = useStore((s) => s.probeHistory)
   const tokenCount = providers.reduce((sum, p) => sum + p.tokens.length, 0)
 
-  const okProviders = providers.filter((p) => p.lastProbe?.ok).length
-  const probedProviders = providers.filter((p) => p.lastProbe).length
+  const okProviders = providers.filter((p) => {
+    const h = probeHistory[p.id]
+    return h && h.length > 0 ? h[h.length - 1].ok : false
+  }).length
+  const probedProviders = providers.filter((p) => (probeHistory[p.id]?.length ?? 0) > 0).length
 
   const cards = [
     {

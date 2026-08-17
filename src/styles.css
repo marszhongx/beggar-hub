@@ -204,6 +204,45 @@ button.card { font: inherit; color: inherit; }
   border-radius: 3px;
   transition: width 0.2s;
 }
+.probe-detail {
+  position: relative;
+  display: inline-block;
+  cursor: default;
+}
+.probe-detail-pop {
+  display: none;
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  top: calc(100% + 6px);
+  min-width: 260px;
+  max-width: 420px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--space-2);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  padding: var(--space-2);
+}
+.probe-detail:hover .probe-detail-pop { display: block; }
+.probe-detail-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  font-size: 12px;
+  border-radius: var(--space-1);
+}
+.probe-detail-row.ok { color: var(--ok); }
+.probe-detail-row.fail { color: var(--danger); }
+.probe-detail-model { font-weight: 600; flex-shrink: 0; }
+.probe-detail-msg {
+  margin-left: auto;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 
 /* ---------- 表单 ---------- */
@@ -304,15 +343,17 @@ button.danger:hover:not(:disabled) { background: #fdf0ee; }
 /* 令牌表格固定列宽，避免密钥显示/隐藏时宽度跳动 */
 .provider-tokens .table { table-layout: fixed; }
 .provider-tokens .table th:nth-child(1),
-.provider-tokens .table td:nth-child(1) { width: 16%; }
+.provider-tokens .table td:nth-child(1) { width: 14%; }
 .provider-tokens .table th:nth-child(2),
-.provider-tokens .table td:nth-child(2) { width: 14%; }
+.provider-tokens .table td:nth-child(2) { width: 13%; }
 .provider-tokens .table th:nth-child(3),
-.provider-tokens .table td:nth-child(3) { width: 20%; }
+.provider-tokens .table td:nth-child(3) { width: 18%; }
 .provider-tokens .table th:nth-child(4),
-.provider-tokens .table td:nth-child(4) { width: 30%; }
+.provider-tokens .table td:nth-child(4) { width: 25%; }
 .provider-tokens .table th:nth-child(5),
-.provider-tokens .table td:nth-child(5) { width: 20%; }
+.provider-tokens .table td:nth-child(5) { width: 15%; }
+.provider-tokens .table th:nth-child(6),
+.provider-tokens .table td:nth-child(6) { width: 15%; }
 .provider-tokens .table .row-new td { background: var(--panel); border-top: 1px dashed var(--line); }
 .provider-tokens .cell-input {
   width: 100%;

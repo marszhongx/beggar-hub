@@ -8,20 +8,21 @@ import type { Provider } from '../types'
 export default function Probe() {
   const { t } = useTranslation()
   const providers = useStore((s) => s.providers)
-  const updateProvider = useStore((s) => s.updateProvider)
+  const tokenProbes = useStore((s) => s.tokenProbes)
+  const probeHistory = useStore((s) => s.probeHistory)
+  const setTokenProbe = useStore((s) => s.setTokenProbe)
+  const pushProbeHistory = useStore((s) => s.pushProbeHistory)
   const [probing, setProbing] = useState<string | null>(null)
   // 探测进度：{ done, total }
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
 
   const runProbe = async (p: Provider) => {
     if (p.tokens.length === 0) {
-      updateProvider(p.id, {
-        lastProbe: {
-          ok: false,
-          latencyMs: 0,
-          message: t('probe.noToken'),
-          probedAt: Date.now(),
-        },
+      pushProbeHistory(p.id, {
+        ok: false,
+        latencyMs: 0,
+        probedAt: Date.now(),
+        models: [],
       })
       return
     }
@@ -36,25 +37,18 @@ export default function Probe() {
       )
     )
     const okAll = results.every((r) => r.ok)
-    const okCount = results.filter((r) => r.ok).length
     const maxLatency = Math.max(...results.map((r) => r.latencyMs))
-    const fail = results
-      .filter((r) => !r.ok)
-      .map((r) => r.message)
-      .join('；')
-    const message =
-      results.length === 1
-        ? results[0].message
-        : okAll
-          ? t('probe.allTokensOk', { ok: okCount, total: results.length })
-          : t('probe.partialTokens', { ok: okCount, total: results.length, fail })
-    updateProvider(p.id, {
-      lastProbe: {
-        ok: okAll,
-        latencyMs: Math.round(maxLatency),
-        message,
-        probedAt: Date.now(),
-      },
+    const models = results.flatMap((r) => r.models)
+    // 记录每个令牌的探报
+    p.tokens.forEach((token, i) => {
+      setTokenProbe(token.id, results[i])
+    })
+    // 记录分舵最近一次汇总探报
+    pushProbeHistory(p.id, {
+      ok: okAll,
+      latencyMs: Math.round(maxLatency),
+      probedAt: Date.now(),
+      models,
     })
     setProbing(null)
     setProgress(null)
@@ -84,41 +78,73 @@ export default function Probe() {
               {
                 key: 'status',
                 title: t('probe.colStatus'),
-                render: (p) =>
-                  probing === p.id ? (
+                render: (p) => {
+                  const lastProbe = probeHistory[p.id]?.[probeHistory[p.id]!.length - 1]
+                  return probing === p.id ? (
                     <span className="probe-progress">
                       <span className="probe-spinner" />
                       {progress && progress.total > 0
                         ? `${progress.done}/${progress.total}`
                         : t('probe.probing')}
                     </span>
-                  ) : p.lastProbe ? (
-                    <span className={p.lastProbe.ok ? 'status-ok' : 'status-fail'}>
-                      {p.lastProbe.ok ? '🟢' : '🔴'} {p.lastProbe.ok ? t('probe.statusOk') : t('probe.statusFail')}
+                  ) : lastProbe ? (
+                    <span className={lastProbe.ok ? 'status-ok' : 'status-fail'}>
+                      {lastProbe.ok ? '🟢' : '🔴'} {lastProbe.ok ? t('probe.statusOk') : t('probe.statusFail')}
                     </span>
                   ) : (
                     <span className="status-none">⚪ {t('probe.statusNone')}</span>
-                  ),
+                  )
+                },
               },
               {
                 key: 'latency',
                 title: t('probe.colLatency'),
-                render: (p) => (p.lastProbe && p.lastProbe.latencyMs ? `${p.lastProbe.latencyMs}ms` : '—'),
+                render: (p) => {
+                  const lastProbe = probeHistory[p.id]?.[probeHistory[p.id]!.length - 1]
+                  return lastProbe && lastProbe.latencyMs ? `${lastProbe.latencyMs}ms` : '—'
+                },
               },
               {
                 key: 'message',
                 title: t('probe.colMessage'),
-                render: (p) =>
-                  probing === p.id && progress && progress.total > 0 ? (
+                render: (p) => {
+                  const lastProbe = probeHistory[p.id]?.[probeHistory[p.id]!.length - 1]
+                  return probing === p.id && progress && progress.total > 0 ? (
                     <div className="probe-bar">
                       <div
                         className="probe-bar-fill"
                         style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }}
                       />
                     </div>
+                  ) : lastProbe ? (
+                    <div className="probe-detail">
+                      <span>
+                        {lastProbe.models.length === 0
+                          ? t('probe.noToken')
+                          : `${t('probe.tokenCount', {
+                              ok: p.tokens.filter((tok) => tokenProbes[tok.id]?.ok).length,
+                              total: p.tokens.length,
+                            })}，${t('api.modelCount', {
+                              ok: lastProbe.models.filter((m) => m.ok).length,
+                              total: lastProbe.models.length,
+                            })}`}
+                      </span>
+                      {lastProbe.models.length > 0 && (
+                        <div className="probe-detail-pop">
+                          {lastProbe.models.map((m, i) => (
+                            <div key={i} className={`probe-detail-row ${m.ok ? 'ok' : 'fail'}`}>
+                              <span>{m.ok ? '🟢' : '🔴'}</span>
+                              <span className="probe-detail-model">{m.model}</span>
+                              <span className="probe-detail-msg">{m.message}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ) : (
-                    p.lastProbe?.message ?? '—'
-                  ),
+                    '—'
+                  )
+                },
               },
             ]}
             actions={(p) => (

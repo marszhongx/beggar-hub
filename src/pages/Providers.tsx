@@ -7,6 +7,7 @@ import Table from '../components/Table'
 export default function Providers() {
   const { t } = useTranslation()
   const providers = useStore((s) => s.providers)
+  const tokenProbes = useStore((s) => s.tokenProbes)
   const addProvider = useStore((s) => s.addProvider)
   const updateProvider = useStore((s) => s.updateProvider)
   const removeProvider = useStore((s) => s.removeProvider)
@@ -268,6 +269,36 @@ export default function Providers() {
                             </button>
                           </span>
                         ),
+                      },
+                      {
+                        key: 'probe',
+                        title: t('providers.colProbe'),
+                        render: (tok) => {
+                          const pr = tokenProbes[tok.id]
+                          if (!pr) return <span className="status-none">⚪ {t('probe.statusNone')}</span>
+                          return (
+                            <div className="probe-detail">
+                              <span className={pr.ok ? 'status-ok' : 'status-fail'}>
+                                {pr.ok ? '🟢' : '🔴'}{' '}
+                                {t('api.modelCount', {
+                                  ok: pr.models.filter((m) => m.ok).length,
+                                  total: pr.models.length,
+                                })}
+                              </span>
+                              {pr.models.length > 0 && (
+                                <div className="probe-detail-pop">
+                                  {pr.models.map((m, i) => (
+                                    <div key={i} className={`probe-detail-row ${m.ok ? 'ok' : 'fail'}`}>
+                                      <span>{m.ok ? '🟢' : '🔴'}</span>
+                                      <span className="probe-detail-model">{m.model}</span>
+                                      <span className="probe-detail-msg">{m.message}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        },
                       },
                     ]}
                     actions={(tok) => (

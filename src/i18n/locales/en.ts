@@ -43,8 +43,7 @@ export default {
     colMessage: 'Report',
     probeNow: 'Probe now',
     hint: 'Scouts probe all models of every token in all branches. Requests are sent directly by the browser; the target site must allow cross-origin access (CORS).',
-    allTokensOk: '{{ok}}/{{total}} tokens, all models usable',
-    partialTokens: '{{ok}}/{{total}} tokens usable: {{fail}}',
+    tokenCount: '{{ok}}/{{total}} tokens usable',
   },
   providers: {
     addTitle: 'Register Branch',
@@ -61,6 +60,7 @@ export default {
     colTokenName: 'Token Name',
     colModel: 'Model',
     colKey: 'API Key',
+    colProbe: 'Probe Result',
   },
   transfer: {
     exported: 'Transmission text generated. Copy and keep it safe.',
@@ -80,11 +80,7 @@ export default {
     notFound: 'Chat endpoint not found (HTTP 404)',
     requestFailed: 'Request failed (HTTP {{status}})',
     networkError: 'Network request failed. Check the API URL, connection, or CORS config.',
-    keyValidAll: 'API key valid, all {{count}} models accessible',
-    keyValidDefault: 'API key valid, endpoint accessible',
-    partial: '{{ok}}/{{total}} models accessible: {{fail}}',
-    defaultFail: 'Default model inaccessible: {{fail}}',
-    modelLabel: 'Model {{name}}',
+    modelCount: '{{ok}}/{{total}} models usable',
     defaultModel: 'Default model',
   },
   tokenTypes: {

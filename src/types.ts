@@ -1,11 +1,19 @@
 // 丐帮核心类型定义
 
+/** 单个模型的探报结果 */
+export interface ModelProbeResult {
+  model: string
+  ok: boolean
+  message: string
+}
+
 /** 探子探报结果 */
 export interface ProbeResult {
   ok: boolean
   latencyMs: number
-  message: string
   probedAt: number
+  /** 各模型的明细 */
+  models: ModelProbeResult[]
 }
 
 /** 令牌类型（决定探子用哪个对话接口测试） */
@@ -40,8 +48,6 @@ export interface Provider {
   website?: string
   /** 是否启用探子监控 */
   monitor: boolean
-  /** 探子最近一次探报 */
-  lastProbe?: ProbeResult
   /** 该 Provider 下的令牌 */
   tokens: Token[]
   createdAt: number

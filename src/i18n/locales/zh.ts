@@ -43,8 +43,7 @@ export default {
     colMessage: '探报详情',
     probeNow: '立即探',
     hint: '探子会探全部分舵下所有令牌的全部模型。请求由浏览器直接发出，目标站点须允许跨域访问（CORS）。',
-    allTokensOk: '{{ok}}/{{total}} 个令牌全部模型可用',
-    partialTokens: '{{ok}}/{{total}} 个令牌可用：{{fail}}',
+    tokenCount: '{{ok}}/{{total}} 个令牌可用',
   },
   providers: {
     addTitle: '登记分舵',
@@ -61,6 +60,7 @@ export default {
     colTokenName: '令牌名称',
     colModel: '模型',
     colKey: 'API 密钥',
+    colProbe: '探查结果',
   },
   transfer: {
     exported: '传功文本已生成，请复制并妥善保存。',
@@ -80,11 +80,7 @@ export default {
     notFound: '未找到对应的对话接口（HTTP 404）',
     requestFailed: '请求失败（HTTP {{status}}）',
     networkError: '网络请求失败，请检查接口地址、网络连接或 CORS 配置',
-    keyValidAll: 'API 密钥有效，{{count}} 个模型均可访问',
-    keyValidDefault: 'API 密钥有效，接口可正常访问',
-    partial: '{{ok}}/{{total}} 个模型可访问：{{fail}}',
-    defaultFail: '默认模型不可访问：{{fail}}',
-    modelLabel: '模型 {{name}}',
+    modelCount: '{{ok}}/{{total}} 模型可用',
     defaultModel: '默认模型',
   },
   tokenTypes: {

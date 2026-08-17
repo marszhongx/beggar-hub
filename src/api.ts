@@ -1,7 +1,7 @@
 // 丐帮探子 —— 用令牌（API Key）实测对话接口连通性
 // 参考 yunwu 的 Provider 实现：类型决定 API 格式，baseUrl 自动归一化
 
-import type { ProbeResult, TokenType } from './types'
+import type { ModelProbeResult, ProbeResult, TokenType } from './types'
 import i18n from './i18n'
 
 const t = i18n.t.bind(i18n)
@@ -114,28 +114,12 @@ export async function probe(
     })
   )
   const okAll = results.every((r) => r.ok)
-  const okCount = results.filter((r) => r.ok).length
   const maxLatency = Math.max(...results.map((r) => r.latencyMs))
+  const modelResults: ModelProbeResult[] = list2.map((m, i) => ({
+    model: m || t('api.defaultModel'),
+    ok: results[i].ok,
+    message: results[i].message,
+  }))
 
-  const label = (i: number) => (list.length > 0 ? t('api.modelLabel', { name: list2[i] }) : t('api.defaultModel'))
-
-  let message: string
-  if (okAll) {
-    message =
-      list.length > 0
-        ? t('api.keyValidAll', { count: results.length })
-        : t('api.keyValidDefault')
-  } else {
-    const fail = results
-      .map((result, index) => ({ result, index }))
-      .filter(({ result }) => !result.ok)
-      .map(({ result, index }) => `${label(index)}：${result.message}`)
-      .join('；')
-    message =
-      list.length > 0
-        ? t('api.partial', { ok: okCount, total: results.length, fail })
-        : t('api.defaultFail', { fail })
-  }
-
-  return { ok: okAll, latencyMs: Math.round(maxLatency), message, probedAt: Date.now() }
+  return { ok: okAll, latencyMs: Math.round(maxLatency), probedAt: Date.now(), models: modelResults }
 }
