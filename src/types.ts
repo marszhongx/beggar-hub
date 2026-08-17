@@ -44,8 +44,6 @@ export interface Provider {
   baseUrl: string
   /** 官网地址（可选） */
   website?: string
-  /** 是否启用探子监控 */
-  monitor: boolean
   /** 该 Provider 下的令牌 */
   tokens: Token[]
   createdAt: number

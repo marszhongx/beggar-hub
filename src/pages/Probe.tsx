@@ -19,8 +19,6 @@ export default function Probe() {
   const [progress, setProgress] = useState<Record<string, { done: number; total: number }>>({})
 
   const running = probing.size > 0
-  // 「探全部分舵」只探启用监控的分舵
-  const monitored = providers.filter((p) => p.monitor)
 
   const lastProbeOf = (id: string) => {
     const h = probeHistory[id]
@@ -88,7 +86,7 @@ export default function Probe() {
 
   const probeAll = async () => {
     // 单个分舵失败不应拖垮其余分舵的探测
-    await Promise.allSettled(monitored.map((p) => runProbe(p)))
+    await Promise.allSettled(providers.map((p) => runProbe(p)))
   }
 
   return (
@@ -96,7 +94,7 @@ export default function Probe() {
       <div className="panel">
         <div className="panel-head">
           <h3>🕵️ {t('probe.title')}</h3>
-          <button className="primary" onClick={probeAll} disabled={running || monitored.length === 0}>
+          <button className="primary" onClick={probeAll} disabled={running || providers.length === 0}>
             {running ? t('probe.probing') : t('probe.probeAll')}
           </button>
         </div>
@@ -180,9 +178,6 @@ export default function Probe() {
         <p className="hint">
           {t('probe.hint')}
         </p>
-        {providers.length > 0 && providers.some((p) => !p.monitor) && (
-          <p className="hint">{t('probe.hintMonitor')}</p>
-        )}
       </div>
     </div>
   )

@@ -46,7 +46,6 @@ export default {
     colMessage: '探报详情',
     probeNow: '立即探',
     hint: '探子会探全部分舵下所有令牌的全部模型。请求由浏览器直接发出，目标站点须允许跨域访问（CORS）。',
-    hintMonitor: '「探全部分舵」只会探启用监控的分舵；未监控的分舵仍可单独探测。',
     tokenCount: '{{ok}}/{{total}} 个令牌可用',
   },
   providers: {
@@ -54,7 +53,6 @@ export default {
     fieldName: '分舵名',
     fieldWebsite: '山门',
     fieldBaseUrl: '接口',
-    fieldMonitor: '启用监控',
     baseUrlHint: '接口地址以 / 结尾表示已给出完整前缀（不再自动补 /v1）。',
     baseUrlPlaceholder: '如 https://api.example.com/v1',
     confirmAdd: '确认登记',

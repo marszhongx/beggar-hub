@@ -41,7 +41,6 @@ export function isValidImportData(data: unknown): data is Partial<AppState> {
         typeof pp.baseUrl !== 'string' ||
         // website 为可选字段，存在时必须为字符串
         (pp.website !== undefined && typeof pp.website !== 'string') ||
-        typeof pp.monitor !== 'boolean' ||
         !Array.isArray(pp.tokens)
       ) {
         return false

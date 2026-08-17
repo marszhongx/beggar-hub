@@ -46,7 +46,6 @@ export default {
     colMessage: 'Report',
     probeNow: 'Probe now',
     hint: 'Scouts probe all models of every token in all branches. Requests are sent directly by the browser; the target site must allow cross-origin access (CORS).',
-    hintMonitor: '"Probe all" only probes monitored branches; unmonitored ones can still be probed individually.',
     tokenCount: '{{ok}}/{{total}} tokens usable',
   },
   providers: {
@@ -54,7 +53,6 @@ export default {
     fieldName: 'Branch name',
     fieldWebsite: 'Website',
     fieldBaseUrl: 'API base URL',
-    fieldMonitor: 'Monitor',
     baseUrlHint: 'If the API URL ends with /, it is treated as the full prefix (no auto /v1).',
     baseUrlPlaceholder: 'e.g. https://api.example.com/v1',
     confirmAdd: 'Confirm',

@@ -21,10 +21,10 @@ export default function Providers() {
   const [newProvider, setNewProvider] = useState({ name: '', website: '', baseUrl: '' })
   // 分舵编辑值（按 id）
   const [providerInputs, setProviderInputs] = useState<
-    Record<string, { name: string; website: string; baseUrl: string; monitor: boolean }>
+    Record<string, { name: string; website: string; baseUrl: string }>
   >({})
   const providerVal = (s: Provider) =>
-    providerInputs[s.id] ?? { name: s.name, website: s.website ?? '', baseUrl: s.baseUrl, monitor: s.monitor }
+    providerInputs[s.id] ?? { name: s.name, website: s.website ?? '', baseUrl: s.baseUrl }
 
   // 轻提示（保存成功等）
   const [msg, setMsg] = useState('')
@@ -83,7 +83,6 @@ export default function Providers() {
     addProvider({
       name: newProvider.name.trim(),
       baseUrl: newProvider.baseUrl.trim(),
-      monitor: true,
       website: newProvider.website.trim() || undefined,
     })
     setAddingProvider(false)
@@ -95,7 +94,6 @@ export default function Providers() {
       name: v.name.trim() || s.name,
       baseUrl: v.baseUrl.trim() || s.baseUrl,
       website: v.website.trim() || undefined,
-      monitor: v.monitor,
     })
     // 清掉编辑缓存，避免残留值影响后续展示
     setProviderInputs((m) => drop(m, s.id))
@@ -234,16 +232,6 @@ export default function Providers() {
                         value={providerVal(s).baseUrl}
                         onChange={(e) =>
                           setProviderInputs((m) => ({ ...m, [s.id]: { ...providerVal(s), baseUrl: e.target.value } }))
-                        }
-                      />
-                    </label>
-                    <label className="field field-check">
-                      <span>{t('providers.fieldMonitor')}</span>
-                      <input
-                        type="checkbox"
-                        checked={providerVal(s).monitor}
-                        onChange={(e) =>
-                          setProviderInputs((m) => ({ ...m, [s.id]: { ...providerVal(s), monitor: e.target.checked } }))
                         }
                       />
                     </label>

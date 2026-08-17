@@ -306,7 +306,6 @@ button.danger:hover:not(:disabled) { background: #fdf0ee; }
 
 /* 复选框：纠正全局 input 的定高/占满规则 */
 input[type='checkbox'] { width: auto; height: auto; accent-color: var(--accent); }
-.field-check { flex: 0 0 auto; justify-content: center; }
 
 /* ---------- 分舵区块 ---------- */
 .provider-block { border-left: 4px solid var(--accent); margin-bottom: var(--gap-block); }
