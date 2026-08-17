@@ -32,6 +32,7 @@ export default {
   },
   probe: {
     noToken: '该分舵尚无令牌，无法探',
+    probeError: '探测过程发生意外错误',
     title: '探子来报',
     probing: '探中…',
     probeAll: '探全部分舵',

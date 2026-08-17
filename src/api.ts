@@ -38,14 +38,21 @@ function isReasoningModel(model: string): boolean {
   return REASONING_MODEL_RE.test(model)
 }
 
-/** 从响应体提取错误详情，供提示信息使用 */
+/** 从响应体提取错误详情，供提示信息使用。
+ *  仅 error 字段视为失败详情；成功响应里的顶层 message（如 {"message":"success"}）不算错误，
+ *  避免网关正常返回 200 却被误判为失败。非 2xx 且无 error 时才回退读顶层 message（兼容部分网关）。 */
 async function readErrorDetail(res: Response): Promise<string> {
   try {
     const text = await res.text()
     if (!text) return ''
     const data = JSON.parse(text)
-    const detail = data?.error?.message ?? data?.error ?? data?.message
-    const msg = typeof detail === 'string' ? detail : detail && typeof detail === 'object' ? JSON.stringify(detail) : ''
+    const err = data?.error
+    let msg = ''
+    if (typeof err === 'string') msg = err
+    else if (err && typeof err === 'object') {
+      msg = typeof err.message === 'string' ? err.message : JSON.stringify(err)
+    }
+    if (!msg && !res.ok && typeof data?.message === 'string') msg = data.message
     if (!msg) return ''
     return msg.length > DETAIL_MAX_LEN ? `${msg.slice(0, DETAIL_MAX_LEN)}…` : msg
   } catch {

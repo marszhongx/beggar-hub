@@ -63,6 +63,15 @@ export default function Probe() {
         probedAt: Date.now(),
         models,
       })
+    } catch (err) {
+      // testOne 内部已捕获绝大多数异常，此处兜底记录一条失败探报而不是静默吞掉
+      console.error('探测过程出现意外异常：', p.name, err)
+      pushProbeHistory(p.id, {
+        ok: false,
+        latencyMs: 0,
+        probedAt: Date.now(),
+        models: [{ model: p.name, ok: false, message: t('probe.probeError') }],
+      })
     } finally {
       setProbing((prev) => {
         const next = new Set(prev)
@@ -78,7 +87,8 @@ export default function Probe() {
   }
 
   const probeAll = async () => {
-    await Promise.all(monitored.map((p) => runProbe(p)))
+    // 单个分舵失败不应拖垮其余分舵的探测
+    await Promise.allSettled(monitored.map((p) => runProbe(p)))
   }
 
   return (

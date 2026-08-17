@@ -39,6 +39,8 @@ export function isValidImportData(data: unknown): data is Partial<AppState> {
         typeof pp.id !== 'string' ||
         typeof pp.name !== 'string' ||
         typeof pp.baseUrl !== 'string' ||
+        // website 为可选字段，存在时必须为字符串
+        (pp.website !== undefined && typeof pp.website !== 'string') ||
         typeof pp.monitor !== 'boolean' ||
         !Array.isArray(pp.tokens)
       ) {
@@ -82,6 +84,29 @@ function omitKey<T>(map: Record<string, T>, key: string): Record<string, T> {
 /** 持久化旧数据 / 被污染 storage 的兜底：只取合法字段 */
 function isRecord(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === 'object' && !Array.isArray(v)
+}
+
+/** 校验单个探报结果的形状（tokenProbes / probeHistory 的条目） */
+function isProbeResult(v: unknown): v is ProbeResult {
+  if (!isRecord(v)) return false
+  if (typeof v.ok !== 'boolean' || typeof v.latencyMs !== 'number' || typeof v.probedAt !== 'number') return false
+  if (!Array.isArray(v.models)) return false
+  return v.models.every(
+    (m) => isRecord(m) && typeof m.model === 'string' && typeof m.ok === 'boolean' && typeof m.message === 'string'
+  )
+}
+
+/** 只保留结构合法的探报条目，丢弃其余（探报是派生数据，脏数据不值得撑爆 UI） */
+function sanitizeProbeMap<T>(
+  map: Record<string, unknown> | undefined,
+  valid: (v: unknown) => boolean
+): Record<string, T> {
+  const out: Record<string, T> = {}
+  if (!map) return out
+  for (const k of Object.keys(map)) {
+    if (valid(map[k])) out[k] = map[k] as T
+  }
+  return out
 }
 
 export const useStore = create<AppState>()(
@@ -133,6 +158,11 @@ export const useStore = create<AppState>()(
                 }
               : p
           ),
+          // 密钥/类型/模型变更会使旧探报失效，立即清除避免展示过期状态
+          tokenProbes:
+            patch.key !== undefined || patch.type !== undefined || patch.models !== undefined
+              ? omitKey(st.tokenProbes, tokenId)
+              : st.tokenProbes,
         })),
       removeToken: (providerId, tokenId) =>
         set((st) => ({
@@ -160,24 +190,36 @@ export const useStore = create<AppState>()(
           const providers = data.providers ?? st.providers
           const tokenIds = new Set(providers.flatMap((p) => p.tokens.map((x) => x.id)))
           const providerIds = new Set(providers.map((p) => p.id))
+          // 探报是派生数据：先丢弃形状非法的条目（防止脏数据撑爆页面），
+          // 再清理指向已不存在分舵/令牌的探报，避免展示过期状态
+          const tokenProbes = sanitizeProbeMap<ProbeResult>(data.tokenProbes ?? st.tokenProbes, isProbeResult)
+          const probeHistory = sanitizeProbeMap<ProbeResult[]>(
+            data.probeHistory ?? st.probeHistory,
+            (v) => Array.isArray(v) && v.every(isProbeResult)
+          )
           return {
             providers,
-            // 导入后清理指向已不存在分舵/令牌的探报，避免展示过期状态
-            tokenProbes: pruneByKeys(data.tokenProbes ?? st.tokenProbes, tokenIds),
-            probeHistory: pruneByKeys(data.probeHistory ?? st.probeHistory, providerIds),
+            tokenProbes: pruneByKeys(tokenProbes, tokenIds),
+            probeHistory: pruneByKeys(probeHistory, providerIds),
           }
         }),
     }),
     {
       name: 'beggar-hub-store',
-      version: 1,
+      version: 2, // v2：迁移时清理形状非法的探报条目
       // 迁移旧版本/被污染的 localStorage：仅保留合法字段，其余回退默认值
       migrate: (persistedState) => {
         const raw = isRecord(persistedState) ? persistedState : {}
         return {
           providers: Array.isArray(raw.providers) ? raw.providers : [],
-          tokenProbes: isRecord(raw.tokenProbes) ? raw.tokenProbes : {},
-          probeHistory: isRecord(raw.probeHistory) ? raw.probeHistory : {},
+          tokenProbes: sanitizeProbeMap<ProbeResult>(
+            isRecord(raw.tokenProbes) ? raw.tokenProbes : {},
+            isProbeResult
+          ),
+          probeHistory: sanitizeProbeMap<ProbeResult[]>(
+            isRecord(raw.probeHistory) ? raw.probeHistory : {},
+            (v) => Array.isArray(v) && v.every(isProbeResult)
+          ),
         } as unknown as AppState
       },
     }

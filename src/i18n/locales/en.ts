@@ -32,6 +32,7 @@ export default {
   },
   probe: {
     noToken: 'This branch has no token, cannot probe',
+    probeError: 'Unexpected error during probe',
     title: 'Scout Report',
     probing: 'Probing…',
     probeAll: 'Probe all branches',

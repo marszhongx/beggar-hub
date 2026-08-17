@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../store'
 import { TOKEN_TYPES, type Provider, type Token, type TokenType } from '../types'
@@ -28,9 +28,19 @@ export default function Providers() {
 
   // 轻提示（保存成功等）
   const [msg, setMsg] = useState('')
+  const flashTimer = useRef<number | undefined>(undefined)
   const flash = (m: string) => {
     setMsg(m)
-    window.setTimeout(() => setMsg(''), 2000)
+    // 清掉上一次的定时器，避免连续操作时旧定时器提前清掉新提示
+    if (flashTimer.current !== undefined) window.clearTimeout(flashTimer.current)
+    flashTimer.current = window.setTimeout(() => setMsg(''), 2000)
+  }
+
+  /** 从编辑缓存中删除单个条目（返回新对象，避免就地修改） */
+  const drop = <T,>(m: Record<string, T>, id: string): Record<string, T> => {
+    const next = { ...m }
+    delete next[id]
+    return next
   }
 
   // 某分舵是否正在新增令牌行
@@ -88,11 +98,7 @@ export default function Providers() {
       monitor: v.monitor,
     })
     // 清掉编辑缓存，避免残留值影响后续展示
-    setProviderInputs((m) => {
-      const next = { ...m }
-      delete next[s.id]
-      return next
-    })
+    setProviderInputs((m) => drop(m, s.id))
     flash(t('app.saved'))
   }
 
@@ -101,7 +107,14 @@ export default function Providers() {
   }
 
   const confirmRemoveToken = (providerId: string, tokenId: string) => {
-    if (window.confirm(t('app.confirmDelete'))) removeToken(providerId, tokenId)
+    if (!window.confirm(t('app.confirmDelete'))) return
+    removeToken(providerId, tokenId)
+    // 清理该令牌残留的编辑缓存与显隐状态，避免长期使用堆积孤儿条目
+    setNameInputs((m) => drop(m, tokenId))
+    setTypeInputs((m) => drop(m, tokenId))
+    setModelInputs((m) => drop(m, tokenId))
+    setKeyInputs((m) => drop(m, tokenId))
+    setRevealed((m) => drop(m, tokenId))
   }
 
   const beginAdd = (providerId: string) => {
@@ -139,26 +152,10 @@ export default function Providers() {
     if (key !== undefined && key.trim()) patch.key = key.trim()
     updateToken(p.id, tok.id, patch)
     // 清掉编辑缓存
-    setNameInputs((m) => {
-      const next = { ...m }
-      delete next[tok.id]
-      return next
-    })
-    setTypeInputs((m) => {
-      const next = { ...m }
-      delete next[tok.id]
-      return next
-    })
-    setModelInputs((m) => {
-      const next = { ...m }
-      delete next[tok.id]
-      return next
-    })
-    setKeyInputs((m) => {
-      const next = { ...m }
-      delete next[tok.id]
-      return next
-    })
+    setNameInputs((m) => drop(m, tok.id))
+    setTypeInputs((m) => drop(m, tok.id))
+    setModelInputs((m) => drop(m, tok.id))
+    setKeyInputs((m) => drop(m, tok.id))
     flash(t('app.saved'))
   }
 
