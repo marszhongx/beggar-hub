@@ -33,8 +33,6 @@ export interface Token {
   type: TokenType
   /** 模型名（探子测试用，逗号分隔） */
   models: string
-  /** 备注 */
-  note?: string
   createdAt: number
 }
 

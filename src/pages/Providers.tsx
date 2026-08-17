@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useStore } from '../store'
 import { TOKEN_TYPES, type Provider, type Token, type TokenType } from '../types'
 import Table from '../components/Table'
+import ProbeDetail from '../components/ProbeDetail'
 
 export default function Providers() {
   const { t } = useTranslation()
@@ -19,8 +20,18 @@ export default function Providers() {
   const [addingProvider, setAddingProvider] = useState(false)
   const [newProvider, setNewProvider] = useState({ name: '', website: '', baseUrl: '' })
   // 分舵编辑值（按 id）
-  const [providerInputs, setProviderInputs] = useState<Record<string, { name: string; website: string; baseUrl: string }>>({})
-  const providerVal = (s: Provider) => providerInputs[s.id] ?? { name: s.name, website: s.website ?? '', baseUrl: s.baseUrl }
+  const [providerInputs, setProviderInputs] = useState<
+    Record<string, { name: string; website: string; baseUrl: string; monitor: boolean }>
+  >({})
+  const providerVal = (s: Provider) =>
+    providerInputs[s.id] ?? { name: s.name, website: s.website ?? '', baseUrl: s.baseUrl, monitor: s.monitor }
+
+  // 轻提示（保存成功等）
+  const [msg, setMsg] = useState('')
+  const flash = (m: string) => {
+    setMsg(m)
+    window.setTimeout(() => setMsg(''), 2000)
+  }
 
   // 某分舵是否正在新增令牌行
   const [adding, setAdding] = useState<Record<string, boolean>>({})
@@ -74,11 +85,28 @@ export default function Providers() {
       name: v.name.trim() || s.name,
       baseUrl: v.baseUrl.trim() || s.baseUrl,
       website: v.website.trim() || undefined,
+      monitor: v.monitor,
     })
+    // 清掉编辑缓存，避免残留值影响后续展示
+    setProviderInputs((m) => {
+      const next = { ...m }
+      delete next[s.id]
+      return next
+    })
+    flash(t('app.saved'))
+  }
+
+  const confirmRemoveProvider = (id: string) => {
+    if (window.confirm(t('app.confirmDelete'))) removeProvider(id)
+  }
+
+  const confirmRemoveToken = (providerId: string, tokenId: string) => {
+    if (window.confirm(t('app.confirmDelete'))) removeToken(providerId, tokenId)
   }
 
   const beginAdd = (providerId: string) => {
-    setAdding((a) => ({ ...a, [providerId]: true }))
+    // 同一时刻只允许一个分舵存在新增行，避免共享草稿互相污染
+    setAdding({ [providerId]: true })
     setDraft({ type: 'openai', name: '', model: '', key: '' })
     setRevealDraft(false)
   }
@@ -98,21 +126,45 @@ export default function Providers() {
     setAdding((a) => ({ ...a, [providerId]: false }))
   }
 
-  const saveToken = (p: Provider, t: Token) => {
+  const saveToken = (p: Provider, tok: Token) => {
     const patch: Partial<Token> = {}
-    const name = nameInputs[t.id]
+    const name = nameInputs[tok.id]
     if (name !== undefined && name.trim()) patch.name = name.trim()
-    const type = typeInputs[t.id]
+    const type = typeInputs[tok.id]
     if (type !== undefined) patch.type = type
-    const models = (modelInputs[t.id] ?? '').trim()
-    patch.models = models
-    const key = keyInputs[t.id]
+    // 仅当用户真的修改过模型列时才写入，避免误点保存清空已有模型列表
+    const models = modelInputs[tok.id]
+    if (models !== undefined) patch.models = models.trim()
+    const key = keyInputs[tok.id]
     if (key !== undefined && key.trim()) patch.key = key.trim()
-    updateToken(p.id, t.id, patch)
+    updateToken(p.id, tok.id, patch)
+    // 清掉编辑缓存
+    setNameInputs((m) => {
+      const next = { ...m }
+      delete next[tok.id]
+      return next
+    })
+    setTypeInputs((m) => {
+      const next = { ...m }
+      delete next[tok.id]
+      return next
+    })
+    setModelInputs((m) => {
+      const next = { ...m }
+      delete next[tok.id]
+      return next
+    })
+    setKeyInputs((m) => {
+      const next = { ...m }
+      delete next[tok.id]
+      return next
+    })
+    flash(t('app.saved'))
   }
 
   return (
     <div className="stations">
+      {msg && <p className="msg">{msg}</p>}
       {addingProvider ? (
         <div className="panel">
           <h3>🏯 {t('providers.addTitle')}</h3>
@@ -135,12 +187,14 @@ export default function Providers() {
               <span>{t('providers.fieldBaseUrl')}</span>
               <input
                 value={newProvider.baseUrl}
+                placeholder={t('providers.baseUrlPlaceholder')}
                 onChange={(e) => setNewProvider((n) => ({ ...n, baseUrl: e.target.value }))}
               />
             </label>
             <button onClick={confirmAddProvider}>{t('providers.confirmAdd')}</button>
             <button className="danger" onClick={cancelAddProvider}>{t('app.cancel')}</button>
           </div>
+          <p className="hint">{t('providers.baseUrlHint')}</p>
         </div>
       ) : (
         <button className="provider-new-card" onClick={beginAddProvider}>
@@ -186,12 +240,22 @@ export default function Providers() {
                         }
                       />
                     </label>
+                    <label className="field field-check">
+                      <span>{t('providers.fieldMonitor')}</span>
+                      <input
+                        type="checkbox"
+                        checked={providerVal(s).monitor}
+                        onChange={(e) =>
+                          setProviderInputs((m) => ({ ...m, [s.id]: { ...providerVal(s), monitor: e.target.checked } }))
+                        }
+                      />
+                    </label>
                   </span>
                 </div>
                 <div className="provider-actions">
                   <button onClick={() => beginAdd(s.id)}>{t('providers.addToken')}</button>
                   <button onClick={() => saveProvider(s)}>{t('app.save')}</button>
-                  <button className="danger" onClick={() => removeProvider(s.id)}>{t('app.delete')}</button>
+                  <button className="danger" onClick={() => confirmRemoveProvider(s.id)}>{t('app.delete')}</button>
                 </div>
               </div>
 
@@ -285,17 +349,7 @@ export default function Providers() {
                                   total: pr.models.length,
                                 })}
                               </span>
-                              {pr.models.length > 0 && (
-                                <div className="probe-detail-pop">
-                                  {pr.models.map((m, i) => (
-                                    <div key={i} className={`probe-detail-row ${m.ok ? 'ok' : 'fail'}`}>
-                                      <span>{m.ok ? '🟢' : '🔴'}</span>
-                                      <span className="probe-detail-model">{m.model}</span>
-                                      <span className="probe-detail-msg">{m.message}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
+                              {pr.models.length > 0 && <ProbeDetail models={pr.models} />}
                             </div>
                           )
                         },
@@ -304,7 +358,7 @@ export default function Providers() {
                     actions={(tok) => (
                       <div className="table-actions">
                         <button onClick={() => saveToken(s, tok)}>{t('app.save')}</button>
-                        <button className="danger" onClick={() => removeToken(s.id, tok.id)}>{t('app.delete')}</button>
+                        <button className="danger" onClick={() => confirmRemoveToken(s.id, tok.id)}>{t('app.delete')}</button>
                       </div>
                     )}
                     footerRow={() =>

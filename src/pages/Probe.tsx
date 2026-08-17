@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../store'
-import { probe } from '../api'
+import { countProbeModels, probe } from '../api'
 import Table from '../components/Table'
-import type { Provider } from '../types'
+import ProbeDetail from '../components/ProbeDetail'
+import type { ProbeResult, Provider } from '../types'
 
 export default function Probe() {
   const { t } = useTranslation()
@@ -12,9 +13,19 @@ export default function Probe() {
   const probeHistory = useStore((s) => s.probeHistory)
   const setTokenProbe = useStore((s) => s.setTokenProbe)
   const pushProbeHistory = useStore((s) => s.pushProbeHistory)
-  const [probing, setProbing] = useState<string | null>(null)
-  // 探测进度：{ done, total }
-  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
+  // 正在探测的分舵集合（支持并发探测多个分舵互不干扰）
+  const [probing, setProbing] = useState<Set<string>>(new Set())
+  // 每个分舵的探测进度（providerId → { done, total }，跨令牌累计）
+  const [progress, setProgress] = useState<Record<string, { done: number; total: number }>>({})
+
+  const running = probing.size > 0
+  // 「探全部分舵」只探启用监控的分舵
+  const monitored = providers.filter((p) => p.monitor)
+
+  const lastProbeOf = (id: string) => {
+    const h = probeHistory[id]
+    return h && h.length > 0 ? h[h.length - 1] : undefined
+  }
 
   const runProbe = async (p: Provider) => {
     if (p.tokens.length === 0) {
@@ -26,36 +37,48 @@ export default function Probe() {
       })
       return
     }
-    setProbing(p.id)
-    setProgress({ done: 0, total: 0 })
-    // 探该分舵下所有令牌，每个令牌探其全部模型
-    const results = await Promise.all(
-      p.tokens.map((token) =>
-        probe(p.baseUrl, token.key, token.type, token.models, (done, total) => {
-          setProgress({ done, total })
+    setProbing((prev) => new Set(prev).add(p.id))
+    // 进度按整个分舵的所有模型数累计
+    const total = p.tokens.reduce((n, token) => n + countProbeModels(token.models), 0)
+    setProgress((prev) => ({ ...prev, [p.id]: { done: 0, total } }))
+    try {
+      let done = 0
+      const results: ProbeResult[] = []
+      // 令牌串行探测（共享进度不互相覆盖），令牌内部多模型仍并发
+      for (const token of p.tokens) {
+        const r = await probe(p.baseUrl, token.key, token.type, token.models, (d) => {
+          setProgress((prev) => ({ ...prev, [p.id]: { done: done + d, total } }))
         })
-      )
-    )
-    const okAll = results.every((r) => r.ok)
-    const maxLatency = Math.max(...results.map((r) => r.latencyMs))
-    const models = results.flatMap((r) => r.models)
-    // 记录每个令牌的探报
-    p.tokens.forEach((token, i) => {
-      setTokenProbe(token.id, results[i])
-    })
-    // 记录分舵最近一次汇总探报
-    pushProbeHistory(p.id, {
-      ok: okAll,
-      latencyMs: Math.round(maxLatency),
-      probedAt: Date.now(),
-      models,
-    })
-    setProbing(null)
-    setProgress(null)
+        results.push(r)
+        done += countProbeModels(token.models)
+        // 每个令牌探完即时更新，方便分页查看明细
+        setTokenProbe(token.id, r)
+      }
+      const okAll = results.every((r) => r.ok)
+      const maxLatency = results.length > 0 ? Math.max(...results.map((r) => r.latencyMs)) : 0
+      const models = results.flatMap((r) => r.models)
+      pushProbeHistory(p.id, {
+        ok: okAll,
+        latencyMs: Math.round(maxLatency),
+        probedAt: Date.now(),
+        models,
+      })
+    } finally {
+      setProbing((prev) => {
+        const next = new Set(prev)
+        next.delete(p.id)
+        return next
+      })
+      setProgress((prev) => {
+        const next = { ...prev }
+        delete next[p.id]
+        return next
+      })
+    }
   }
 
   const probeAll = async () => {
-    await Promise.all(providers.map((p) => runProbe(p)))
+    await Promise.all(monitored.map((p) => runProbe(p)))
   }
 
   return (
@@ -63,8 +86,8 @@ export default function Probe() {
       <div className="panel">
         <div className="panel-head">
           <h3>🕵️ {t('probe.title')}</h3>
-          <button className="primary" onClick={probeAll} disabled={probing !== null || providers.length === 0}>
-            {probing !== null ? t('probe.probing') : t('probe.probeAll')}
+          <button className="primary" onClick={probeAll} disabled={running || monitored.length === 0}>
+            {running ? t('probe.probing') : t('probe.probeAll')}
           </button>
         </div>
         {providers.length === 0 ? (
@@ -79,13 +102,12 @@ export default function Probe() {
                 key: 'status',
                 title: t('probe.colStatus'),
                 render: (p) => {
-                  const lastProbe = probeHistory[p.id]?.[probeHistory[p.id]!.length - 1]
-                  return probing === p.id ? (
+                  const lastProbe = lastProbeOf(p.id)
+                  const pr = progress[p.id]
+                  return probing.has(p.id) ? (
                     <span className="probe-progress">
                       <span className="probe-spinner" />
-                      {progress && progress.total > 0
-                        ? `${progress.done}/${progress.total}`
-                        : t('probe.probing')}
+                      {pr && pr.total > 0 ? `${pr.done}/${pr.total}` : t('probe.probing')}
                     </span>
                   ) : lastProbe ? (
                     <span className={lastProbe.ok ? 'status-ok' : 'status-fail'}>
@@ -100,7 +122,7 @@ export default function Probe() {
                 key: 'latency',
                 title: t('probe.colLatency'),
                 render: (p) => {
-                  const lastProbe = probeHistory[p.id]?.[probeHistory[p.id]!.length - 1]
+                  const lastProbe = lastProbeOf(p.id)
                   return lastProbe && lastProbe.latencyMs ? `${lastProbe.latencyMs}ms` : '—'
                 },
               },
@@ -108,12 +130,13 @@ export default function Probe() {
                 key: 'message',
                 title: t('probe.colMessage'),
                 render: (p) => {
-                  const lastProbe = probeHistory[p.id]?.[probeHistory[p.id]!.length - 1]
-                  return probing === p.id && progress && progress.total > 0 ? (
+                  const lastProbe = lastProbeOf(p.id)
+                  const pr = progress[p.id]
+                  return probing.has(p.id) && pr && pr.total > 0 ? (
                     <div className="probe-bar">
                       <div
                         className="probe-bar-fill"
-                        style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }}
+                        style={{ width: `${Math.round((pr.done / pr.total) * 100)}%` }}
                       />
                     </div>
                   ) : lastProbe ? (
@@ -129,17 +152,7 @@ export default function Probe() {
                               total: lastProbe.models.length,
                             })}`}
                       </span>
-                      {lastProbe.models.length > 0 && (
-                        <div className="probe-detail-pop">
-                          {lastProbe.models.map((m, i) => (
-                            <div key={i} className={`probe-detail-row ${m.ok ? 'ok' : 'fail'}`}>
-                              <span>{m.ok ? '🟢' : '🔴'}</span>
-                              <span className="probe-detail-model">{m.model}</span>
-                              <span className="probe-detail-msg">{m.message}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      {lastProbe.models.length > 0 && <ProbeDetail models={lastProbe.models} />}
                     </div>
                   ) : (
                     '—'
@@ -148,7 +161,7 @@ export default function Probe() {
               },
             ]}
             actions={(p) => (
-              <button onClick={() => runProbe(p)} disabled={probing !== null}>
+              <button onClick={() => runProbe(p)} disabled={running}>
                 {t('probe.probeNow')}
               </button>
             )}
@@ -157,6 +170,9 @@ export default function Probe() {
         <p className="hint">
           {t('probe.hint')}
         </p>
+        {providers.length > 0 && providers.some((p) => !p.monitor) && (
+          <p className="hint">{t('probe.hintMonitor')}</p>
+        )}
       </div>
     </div>
   )

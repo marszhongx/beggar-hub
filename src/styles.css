@@ -172,6 +172,7 @@ button.card { font: inherit; color: inherit; }
 
 .empty { color: var(--muted); font-size: 14px; padding: var(--space-3) 0; }
 .hint { color: var(--muted); font-size: 12px; margin-top: var(--space-3); line-height: 1.6; }
+.msg { color: var(--accent); font-size: 13px; margin: var(--space-2) 0; }
 
 /* ---------- 表格 ---------- */
 .table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -302,6 +303,10 @@ button.danger:hover:not(:disabled) { background: #fdf0ee; }
 }
 .inline-check input[type='checkbox'] { width: auto; }
 .inline-check input[type='range'] { width: 140px; padding: 0; }
+
+/* 复选框：纠正全局 input 的定高/占满规则 */
+input[type='checkbox'] { width: auto; height: auto; accent-color: var(--accent); }
+.field-check { flex: 0 0 auto; justify-content: center; }
 
 /* ---------- 分舵区块 ---------- */
 .provider-block { border-left: 4px solid var(--accent); margin-bottom: var(--gap-block); }

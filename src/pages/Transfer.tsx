@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useStore } from '../store'
+import { isValidImportData, useStore } from '../store'
 
 export default function Transfer() {
   const { t } = useTranslation()
@@ -29,7 +29,12 @@ export default function Transfer() {
 
   const importJson = () => {
     try {
-      const data = JSON.parse(json)
+      const data: unknown = JSON.parse(json)
+      // 只校验可解析还不够：结构不对的 JSON 会把 store 撑爆导致白屏
+      if (!isValidImportData(data)) {
+        setMsg(t('transfer.invalid'))
+        return
+      }
       importAll(data)
       setMsg(t('transfer.success'))
     } catch {
